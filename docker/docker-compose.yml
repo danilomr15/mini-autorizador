@@ -1,0 +1,57 @@
+version: "3.7"
+
+services:
+
+#  mongo:
+#    image: mongo:4.2
+#    hostname: mongo
+#    container_name: mongo
+#    ports:
+#      - 27017:27017
+#    environment:
+#      MONGO_INITDB_DATABASE: miniautorizador
+#      MONGO_INITDB_ROOT_USERNAME: user
+#      MONGO_INITDB_ROOT_PASSWORD: password
+#    volumes:
+#      - ./scripts/init.js:/docker-entrypoint-initdb.d/init.js:ro
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    build: ../rabbitmq/.
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_USER=miniautorizador
+      - RABBITMQ_PASSWORD=pass123
+      - RABBITMQ_PID_FILE=/var/lib/rabbitmq/mnesia/rabbitmq
+
+  mysql:
+    image: mysql:5.7
+    hostname: mysql
+    container_name: mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: miniautorizador
+      MYSQL_ROOT_PASSWORD:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    volumes:
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  app:
+    image: mini-autorizador
+    build: ../
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+      - rabbitmq
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/miniautorizador
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
